@@ -10,7 +10,7 @@ import (
 )
 
 // DevAddr represents the device address.
-type DevAddr [8]byte
+type DevAddr [4]byte
 
 // NetIDType returns the NetID type of the DevAddr.
 func (a DevAddr) NetIDType() int {
