@@ -277,6 +277,7 @@ func (h FHDR) MarshalBinary() ([]byte, error) {
 		return []byte{}, errors.New("lorawan: max number of FOpts bytes is 15")
 	}
 
+	// 6 bytes of DevAddr + 1 byte of FCtrl + X bytes of FOpts
 	out := make([]byte, 0, 7+h.FCtrl.fOptsLen)
 	b, err = h.DevAddr.MarshalBinary()
 	if err != nil {
@@ -289,9 +290,7 @@ func (h FHDR) MarshalBinary() ([]byte, error) {
 		return []byte{}, err
 	}
 	out = append(out, b...)
-	// fCntBytes := make([]byte, 4)
-	// binary.LittleEndian.PutUint32(fCntBytes, h.FCnt)
-	// out = append(out, fCntBytes[0:2]...)
+
 	out = append(out, opts...)
 
 	return out, nil
@@ -303,16 +302,13 @@ func (h *FHDR) UnmarshalBinary(uplink bool, data []byte) error {
 		return errors.New("lorawan: at least 7 bytes are expected")
 	}
 
-	if err := h.DevAddr.UnmarshalBinary(data[0:4]); err != nil {
+	if err := h.DevAddr.UnmarshalBinary(data[0:6]); err != nil {
 		return err
 	}
-	if err := h.FCtrl.UnmarshalBinary(data[4:5]); err != nil {
+	if err := h.FCtrl.UnmarshalBinary(data[6:7]); err != nil {
 		return err
 	}
-	fCntBytes := make([]byte, 4)
-	copy(fCntBytes, data[5:7])
-	h.FCnt = binary.LittleEndian.Uint32(fCntBytes)
-
+	
 	if len(data) > 7 {
 		h.FOpts = []Payload{
 			&DataPayload{Bytes: data[7:]},
