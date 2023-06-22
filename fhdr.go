@@ -10,7 +10,10 @@ import (
 )
 
 // DevAddr represents the device address.
-type DevAddr [4]byte
+// format: 
+// <TypePrefix> <NwkID>   <NwkAddress>
+// 1-8 bits     6-17 bits  ...rest
+type DevAddr [6]byte
 
 // NetIDType returns the NetID type of the DevAddr.
 func (a DevAddr) NetIDType() int {
@@ -108,7 +111,9 @@ func (a *DevAddr) setAddrPrefix(prefixLength, nwkIDBits int, netID NetID) {
 }
 
 func (a DevAddr) getNwkID(prefixLength, nwkIDBits int) []byte {
-	// convert DevAddr to uint32
+	// convert the first part of the DevAddr to uint32
+	// containing the AddrPrefix
+	// Uint32 already takes the first 4 bytes
 	temp := binary.BigEndian.Uint32(a[:])
 
 	// clear prefix
@@ -250,7 +255,7 @@ func (c *FCtrl) UnmarshalBinary(data []byte) error {
 type FHDR struct {
 	DevAddr DevAddr   `json:"devAddr"`
 	FCtrl   FCtrl     `json:"fCtrl"`
-	FCnt    uint32    `json:"fCnt"`  // only the least-significant 16 bits will be marshalled
+	// FCnt    uint32    `json:"fCnt"`  // only the least-significant 16 bits will be marshalled
 	FOpts   []Payload `json:"fOpts"` // max. number of allowed bytes is 15
 }
 
@@ -284,9 +289,9 @@ func (h FHDR) MarshalBinary() ([]byte, error) {
 		return []byte{}, err
 	}
 	out = append(out, b...)
-	fCntBytes := make([]byte, 4)
-	binary.LittleEndian.PutUint32(fCntBytes, h.FCnt)
-	out = append(out, fCntBytes[0:2]...)
+	// fCntBytes := make([]byte, 4)
+	// binary.LittleEndian.PutUint32(fCntBytes, h.FCnt)
+	// out = append(out, fCntBytes[0:2]...)
 	out = append(out, opts...)
 
 	return out, nil
